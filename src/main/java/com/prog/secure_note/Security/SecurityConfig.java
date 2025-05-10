@@ -19,6 +19,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests((requests) ->
                 requests
                         .requestMatchers("/contact", "/about").permitAll()
+                        .requestMatchers("/admin").denyAll()
                         .anyRequest().authenticated()); // it says that all requests that are hitting the server need to be authenticated.
 //        http.formLogin(withDefaults()); // this is the default login form provided by Spring Security.
         http.httpBasic(withDefaults()); // this is the default basic authentication provided by Spring Security.

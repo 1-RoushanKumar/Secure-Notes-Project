@@ -20,4 +20,9 @@ public class DemoController {
     public String about() {
         return "About Me!!";
     }
+
+    @GetMapping("/admin")
+    public String admin() {
+        return "Admin Page!!";
+    }
 }
