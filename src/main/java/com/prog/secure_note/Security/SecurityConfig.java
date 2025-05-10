@@ -16,10 +16,11 @@ public class SecurityConfig {
     //copied from the SpringBootWebSecurityConfiguration.java class.
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated()); // it says that all requests that are hitting the server need to be authenticated.
+        http.authorizeHttpRequests((requests) ->
+                requests
+                        .requestMatchers("/contact", "/about").permitAll()
+                        .anyRequest().authenticated()); // it says that all requests that are hitting the server need to be authenticated.
 //        http.formLogin(withDefaults()); // this is the default login form provided by Spring Security.
-        http.sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); //here i made the session stateless, so that the server does not create a session for the user.
         http.httpBasic(withDefaults()); // this is the default basic authentication provided by Spring Security.
         return http.build();
     }
