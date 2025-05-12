@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ROLE_ADMIN')") //added class level @PreAuthorize annotation.
+//@PreAuthorize("hasRole('ROLE_ADMIN')") //added class level @PreAuthorize annotation.
 public class AdminController {
 
     @Autowired

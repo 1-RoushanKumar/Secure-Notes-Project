@@ -19,12 +19,15 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true) //added method level security.
+//@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true) //added method level security.
 public class SecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated());
+        http.authorizeHttpRequests((requests) ->
+                requests
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")  //instead of ROLE_ADMIN we write ADMIN only it will automatically append ROLE_ prefix.
+                        .anyRequest().authenticated());
         http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
         http.csrf(csrf -> csrf.disable());
