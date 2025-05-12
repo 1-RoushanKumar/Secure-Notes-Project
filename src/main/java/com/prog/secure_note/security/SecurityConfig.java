@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.time.LocalDate;
 
@@ -31,8 +32,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")  //instead of ROLE_ADMIN we write ADMIN only it will automatically append ROLE_ prefix.
                         .anyRequest().authenticated());
         http.formLogin(withDefaults());
-        http.httpBasic(withDefaults());
         http.csrf(csrf -> csrf.disable());
+        http.addFilterBefore(new CustomLoggingFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.httpBasic(withDefaults());
         return http.build();
     }
 
