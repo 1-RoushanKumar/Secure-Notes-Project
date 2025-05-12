@@ -8,6 +8,7 @@ import com.prog.secure_note.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -18,6 +19,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true) //added method level security.
 public class SecurityConfig {
 
     @Bean
@@ -29,7 +31,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    Adding some dummy credentials.
+    //    Adding some dummy credentials.
 //    CommandLineRunner initData runs custom startup logic after Spring Boot starts — often used to preload database data or perform initial configuration.
     @Bean
     public CommandLineRunner initData(RoleRepository roleRepository, UserRepository userRepository) {
