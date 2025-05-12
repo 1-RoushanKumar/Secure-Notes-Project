@@ -34,6 +34,7 @@ public class SecurityConfig {
         http.formLogin(withDefaults());
         http.csrf(csrf -> csrf.disable());
         http.addFilterBefore(new CustomLoggingFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(new RequestValidationFilter(), CustomLoggingFilter.class);
         http.httpBasic(withDefaults());
         return http.build();
     }
