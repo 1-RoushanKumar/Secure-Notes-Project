@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.time.LocalDate;
 
@@ -26,10 +27,12 @@ public class SecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((requests) ->
                 requests
+                        .requestMatchers("/api/csrf-token").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")  //instead of ROLE_ADMIN we write ADMIN only it will automatically append ROLE_ prefix.
                         .anyRequest().authenticated());
         http.formLogin(withDefaults());
-        http.csrf(csrf -> csrf.disable());
+        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())); // CSRF protection
+//        http.csrf(csrf -> csrf.disable());
         http.httpBasic(withDefaults());
         return http.build();
     }
