@@ -31,7 +31,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")  //instead of ROLE_ADMIN we write ADMIN only it will automatically append ROLE_ prefix.
                         .anyRequest().authenticated());
         http.formLogin(withDefaults());
-        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())); // CSRF protection
+        http.csrf(csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("api/auth/public/**")); // CSRF protection
 //        http.csrf(csrf -> csrf.disable());
         http.httpBasic(withDefaults());
         return http.build();
