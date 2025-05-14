@@ -54,6 +54,7 @@ public class SecurityConfig {
                 excepion.authenticationEntryPoint(unauthorizedHandler));
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         http.httpBasic(withDefaults());
+        http.cors(withDefaults()); // Enable CORS
         return http.build();
     }
 
