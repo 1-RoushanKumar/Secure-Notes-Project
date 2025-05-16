@@ -1,18 +1,21 @@
 package com.prog.secure_note.service.serviceImpl;
 
-import com.prog.secure_note.model.AppRole;
-import com.prog.secure_note.model.Role;
-import com.prog.secure_note.model.User;
-import com.prog.secure_note.model.UserDTO;
+import com.prog.secure_note.model.*;
+import com.prog.secure_note.repositories.PasswordResetTokenRepository;
 import com.prog.secure_note.repositories.RoleRepository;
 import com.prog.secure_note.repositories.UserRepository;
 import com.prog.secure_note.service.UserService;
+import com.prog.secure_note.utils.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -25,6 +28,15 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
+    @Autowired
+    EmailService emailService;
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
@@ -122,6 +134,55 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to update password");
         }
+    }
+
+    // This method generates a password reset token for the user with the given email address.
+    @Override
+    public void generatePasswordResetToken(String email) {
+        //First we fetching the user associated with this email address
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+        //Here we are generating a unique token for the password reset
+        String token = UUID.randomUUID().toString();
+        //We are setting the expiry date for the token to 24 hours from now
+        Instant expiryDate = Instant.now().plus(24, ChronoUnit.HOURS);
+        //We are creating a new PasswordResetToken object and saving it to the database
+        PasswordResetToken resetToken = new PasswordResetToken(token, expiryDate, user);
+        passwordResetTokenRepository.save(resetToken);
+
+        //We are creating a reset URL that the user can use to reset their password
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
+
+        //Send email to the user with the reset URL
+        emailService.sendPasswordResetEmail(user.getEmail(), resetUrl);
+    }
+
+    // This method resets the user's password using the provided token and new password.
+    // And also validates the token to ensure it is not expired or already used.
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        // Fetching the password reset token from the database using the provided token
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(token).orElseThrow(() -> new RuntimeException("Invalid password reset token"));
+
+        // Check if the token has already been used or expired
+        if (resetToken.isUsed()) {
+            throw new RuntimeException("Password reset token has already been used");
+        }
+
+        if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+            throw new RuntimeException("Password reset token has expired");
+        }
+
+        // If the token is valid, we fetch the user associated with the token
+        // And reset the user's password and save this new password to database.
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Mark the token as used to prevent it from being used again
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 
 }
