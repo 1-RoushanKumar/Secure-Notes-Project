@@ -42,11 +42,14 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((requests) ->
-                requests
-                        .requestMatchers("/api/csrf-token").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/auth/public/**").permitAll()
-                        .anyRequest().authenticated());
+                        requests
+                                .requestMatchers("/api/csrf-token").permitAll()
+                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/auth/public/**").permitAll()
+                                .requestMatchers("/oauth2/**").permitAll()
+                                .anyRequest().authenticated())
+                .oauth2Login(oauth2 -> {
+                });
         http.formLogin(withDefaults());
         http.csrf(csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
