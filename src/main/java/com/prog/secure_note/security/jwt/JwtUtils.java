@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtils {
@@ -42,8 +43,12 @@ public class JwtUtils {
     //This will generate a JWT token using the username of the user.
     public String generateTokenFromUsername(UserDetails userDetails) {
         String username = userDetails.getUsername();
+        String roles = userDetails.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.joining(","));
         return Jwts.builder()
                 .subject(username)
+                .claim("roles", roles)
                 .issuedAt(new Date()) //current date
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))//here i adding the current date and the expiration time to get the expiration date.
                 .signWith(key()) //here i signing the token with the secret key.(key() method is written below).
