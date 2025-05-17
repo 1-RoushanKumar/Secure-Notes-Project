@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -183,6 +185,25 @@ public class UserServiceImpl implements UserService {
         // Mark the token as used to prevent it from being used again
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    //This will registerUser of the OAuth2 user.
+    @Override
+    public User registerUser(User newUser) {
+        System.out.println("Password: " + newUser.getPassword());
+        //See password will be null if the user is registered using OAuth2
+        // So we need to check if the password is null or not
+        if (newUser.getPassword() != null) {
+            newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        }
+        newUser.setCredentialsExpiryDate(LocalDate.now().plusYears(1));
+        newUser.setAccountExpiryDate(LocalDate.now().plusYears(1));
+        return userRepository.save(newUser);
     }
 
 }

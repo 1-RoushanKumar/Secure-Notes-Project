@@ -1,5 +1,6 @@
 package com.prog.secure_note.security;
 
+import com.prog.secure_note.config.OAuth2LoginSuccessHandler;
 import com.prog.secure_note.model.AppRole;
 import com.prog.secure_note.model.Role;
 import com.prog.secure_note.model.User;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,6 +36,10 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
+    @Autowired
+    @Lazy
+    OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
@@ -49,6 +55,7 @@ public class SecurityConfig {
                                 .requestMatchers("/oauth2/**").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> {
+                    oauth2.successHandler(oauth2LoginSuccessHandler);
                 });
         http.formLogin(withDefaults());
         http.csrf(csrf ->
