@@ -60,7 +60,7 @@ public class SecurityConfig {
         http.formLogin(withDefaults());
         http.csrf(csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("api/auth/public/**"));
+                        .ignoringRequestMatchers("/api/auth/public/**"));
 //        http.csrf(csrf -> csrf.disable());
         http.exceptionHandling(excepion ->
                 excepion.authenticationEntryPoint(unauthorizedHandler));

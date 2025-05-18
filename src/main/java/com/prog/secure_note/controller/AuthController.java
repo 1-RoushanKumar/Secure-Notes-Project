@@ -11,7 +11,11 @@ import com.prog.secure_note.security.request.SignupRequest;
 import com.prog.secure_note.security.response.LoginResponse;
 import com.prog.secure_note.security.response.MessageResponse;
 import com.prog.secure_note.security.response.UserInfoResponse;
+import com.prog.secure_note.security.service.UserDetailsImpl;
+import com.prog.secure_note.service.TotpService;
 import com.prog.secure_note.service.UserService;
+import com.prog.secure_note.utils.AuthUtil;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -55,6 +59,12 @@ public class AuthController {
     @Autowired
     UserService userService;
 
+    @Autowired
+    AuthUtil authUtil;
+
+    @Autowired
+    TotpService totpService;
+
     @PostMapping("/public/signin")
     //This endpoint is used to authenticate a user and generate a JWT token.
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -75,7 +85,7 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // get the authenticated user details
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         // generate a JWT token for the authenticated user
         String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
@@ -211,6 +221,80 @@ public class AuthController {
             return ResponseEntity.ok(new MessageResponse("Password reset successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    // Here I added the endpoint for two-factor authentication.
+    // This endpoint is used to enable 2FA for the currently authenticated user.
+    // 2FA Authentication
+
+    // This endpoint is used to enable 2FA for the currently authenticated user.
+    @PostMapping("/enable-2fa")
+    public ResponseEntity<String> enable2FA() {
+        //First, fetching the userId of an authenticated user.
+        Long userId = authUtil.loggedInUserId();
+        //Getting the secret from the userService.
+        GoogleAuthenticatorKey secret = userService.generate2FASecret(userId);
+        // Then, we are generating the QR code URL using the secret and the username.
+        String qrCodeUrl = totpService.getQrCodeUrl(secret,
+                userService.getUserById(userId).getUserName());
+        return ResponseEntity.ok(qrCodeUrl);
+    }
+
+    // This endpoint is used to disable 2FA for the currently authenticated user.
+    @PostMapping("/disable-2fa")
+    public ResponseEntity<String> disable2FA() {
+        Long userId = authUtil.loggedInUserId();
+        //Simple in a database where we added the field isTwoFactorEnabled just set it to false.
+        userService.disable2FA(userId);
+        return ResponseEntity.ok("2FA disabled");
+    }
+
+
+    // This endpoint is used to verify the 2FA code entered by the user.
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<String> verify2FA(@RequestParam int code) {
+        // First, fetching the userId of an authenticated user.
+        Long userId = authUtil.loggedInUserId();
+        // Then, we are validating the 2FA code entered by the user.
+        boolean isValid = userService.validate2FACode(userId, code);
+        if (isValid) {
+            userService.enable2FA(userId);
+            return ResponseEntity.ok("2FA Verified");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid 2FA Code");
+        }
+    }
+
+
+    // This endpoint is used to get the 2FA status of the currently authenticated user.
+    @GetMapping("/user/2fa-status")
+    public ResponseEntity<?> get2FAStatus() {
+        User user = authUtil.loggedInUser();
+        if (user != null) {
+            //We may be wondering why we are using Map.of() here.
+            //This is a convenient way to create an immutable map with a single entry.
+            return ResponseEntity.ok().body(Map.of("is2faEnabled", user.isTwoFactorEnabled()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+    }
+
+
+    // This endpoint is used to verify the 2FA code entered by the user during login.
+    @PostMapping("/public/verify-2fa-login")
+    public ResponseEntity<String> verify2FALogin(@RequestParam int code,
+                                                 @RequestParam String jwtToken) {
+        String username = jwtUtils.getUserNameFromJwtToken(jwtToken);
+        User user = userService.findByUsername(username);
+        boolean isValid = userService.validate2FACode(user.getUserId(), code);
+        if (isValid) {
+            return ResponseEntity.ok("2FA Verified");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid 2FA Code");
         }
     }
 }

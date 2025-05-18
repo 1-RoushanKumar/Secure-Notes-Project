@@ -4,16 +4,16 @@ import com.prog.secure_note.model.*;
 import com.prog.secure_note.repositories.PasswordResetTokenRepository;
 import com.prog.secure_note.repositories.RoleRepository;
 import com.prog.secure_note.repositories.UserRepository;
+import com.prog.secure_note.service.TotpService;
 import com.prog.secure_note.service.UserService;
 import com.prog.secure_note.utils.EmailService;
+import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +39,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     EmailService emailService;
+
+    @Autowired
+    TotpService totpService;
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
@@ -194,17 +197,59 @@ public class UserServiceImpl implements UserService {
 
     //This will registerUser of the OAuth2 user.
     @Override
-    public User registerUser(User newUser) {
-        System.out.println("Password: " + newUser.getPassword());
+    public User registerUser(User user) {
+        System.out.println("Password: " + user.getPassword());
         //See password will be null if the user is registered using OAuth2
         // So we need to check if the password is null or not
-        if (newUser.getPassword() != null) {
-            newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
-        newUser.setCredentialsExpiryDate(LocalDate.now().plusYears(1));
-        newUser.setAccountExpiryDate(LocalDate.now().plusYears(1));
-        return userRepository.save(newUser);
+        return userRepository.save(user);
     }
+
+    //This method will generate a 2FA secret and store it in a database.
+    @Override
+    public GoogleAuthenticatorKey generate2FASecret(Long userId) {
+        //First finding the user by id.
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        //Generating the secret key using the totpService.
+        GoogleAuthenticatorKey key = totpService.generateSecret();
+        //Setting the secret key to the user.
+        user.setTwoFactorSecret(key.getKey());
+        //Save this secret in a database.
+        userRepository.save(user);
+        return key;
+    }
+
+    //Here we're validating the 2FA code.
+    @Override
+    public boolean validate2FACode(Long userId, int code) {
+        //First fetched the user by id.
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        //Then we're getting the secret key from the user.And then using verifyCode method of totpService to verify the code.
+        return totpService.verifyCode(user.getTwoFactorSecret(), code);
+    }
+
+    //This method will enable the 2FA for the user.
+    @Override
+    public void enable2FA(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setTwoFactorEnabled(true);
+        userRepository.save(user);
+    }
+
+    //This method will disable the 2FA for the user.
+    @Override
+    public void disable2FA(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setTwoFactorEnabled(false);
+        userRepository.save(user);
+    }
+
 
 }
 
