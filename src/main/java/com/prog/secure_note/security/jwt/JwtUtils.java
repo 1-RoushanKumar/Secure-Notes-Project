@@ -50,6 +50,7 @@ public class JwtUtils {
                 .subject(username)
                 .claim("roles", roles)
                 .claim("is2faEnabled", userDetails.is2faEnabled())  //In token, we are adding the is2faEnabled claim.
+                .claim("email", userDetails.getEmail()) //In token, we are adding the email claim.So i frontend when we decode it we can fetch email also.
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key())

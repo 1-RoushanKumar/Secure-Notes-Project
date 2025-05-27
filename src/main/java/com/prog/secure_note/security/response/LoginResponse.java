@@ -12,11 +12,13 @@ public class LoginResponse {
 
     private String username;
     private List<String> roles;
+    private String email;
 
-    public LoginResponse(String username, List<String> roles, String jwtToken) {
+    public LoginResponse(String username, List<String> roles, String jwtToken , String email) {
         this.username = username;
         this.roles = roles;
         this.jwtToken = jwtToken;
+        this.email = email;
     }
 
 }

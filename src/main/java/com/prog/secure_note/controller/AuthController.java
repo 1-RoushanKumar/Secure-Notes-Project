@@ -97,7 +97,7 @@ public class AuthController {
 
         // Prepare the response body, which include the JWT token, username and roles.
         LoginResponse response = new LoginResponse(userDetails.getUsername(),
-                roles, jwtToken);
+                roles, jwtToken,userDetails.getEmail()); //Added email to the response (Optional).
 
         // Return the response entity with the JWT token included in the response body
         return ResponseEntity.ok(response);

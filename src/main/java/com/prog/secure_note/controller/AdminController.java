@@ -1,9 +1,11 @@
 package com.prog.secure_note.controller;
 
+import com.prog.secure_note.model.ContactMessage;
 import com.prog.secure_note.model.Role;
 import com.prog.secure_note.model.User;
 import com.prog.secure_note.model.UserDTO;
 import com.prog.secure_note.repositories.RoleRepository;
+import com.prog.secure_note.service.ContactMessageService;
 import com.prog.secure_note.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,9 @@ public class AdminController {
 
     @Autowired
     RoleRepository roleRepository;
+
+    @Autowired
+    private ContactMessageService contactMessageService;
 
     //    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/getusers")
@@ -82,5 +87,40 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    //Here i added the contact message service to handle contact messages i added it in admin so only admin can access it.
+    //Here it will fetch all the messages from the database.
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/contact-messages")
+    public ResponseEntity<List<ContactMessage>> getAllContactMessages() {
+        List<ContactMessage> messages = contactMessageService.getAllMessages();
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    //Here it will use to delete the message by id.
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // Only admin users can access this endpoint
+    @DeleteMapping("/message/{id}")
+    public void deleteMessage(@PathVariable Long id) {
+        contactMessageService.deleteMessages(id);
+    }
+
+    //Here it will use to delete all the messages.
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @DeleteMapping("/message/delete-all")
+    public void deleteAllMessages() {
+        contactMessageService.deleteAllMessages();
+    }
+
+    //Here it will change the status of the message.
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PutMapping("/message/{id}/status")
+    public ResponseEntity<ContactMessage> updateMessageStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ContactMessage updatedMessage = contactMessageService.updateStatus(id, status);
+        return ResponseEntity.ok(updatedMessage);
+    }
+
+
 }
 

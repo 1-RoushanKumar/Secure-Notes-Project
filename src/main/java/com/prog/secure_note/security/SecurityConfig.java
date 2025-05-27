@@ -53,6 +53,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/api/auth/public/**").permitAll()
                                 .requestMatchers("/oauth2/**").permitAll()
+                                .requestMatchers("/api/contact/**").permitAll()  //I permitted this endpoint so any user can send a message to the admin.
                                 .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> {
                     oauth2.successHandler(oauth2LoginSuccessHandler);
